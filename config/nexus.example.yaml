@@ -1,0 +1,92 @@
+assistant:
+  name: Nexus
+  personaFile: ./config/persona.md
+
+channels:
+  telegram:
+    enabled: false
+    botToken: ${TELEGRAM_BOT_TOKEN}
+  discord:
+    enabled: false
+    botToken: ${DISCORD_BOT_TOKEN}
+    applicationId: ${DISCORD_APPLICATION_ID}
+  slack:
+    enabled: false
+    botToken: ${SLACK_BOT_TOKEN}
+    appToken: ${SLACK_APP_TOKEN}
+    signingSecret: ${SLACK_SIGNING_SECRET}
+  whatsapp:
+    enabled: false
+    wahaUrl: http://localhost:3001
+  cli:
+    enabled: true
+
+providers:
+  openai:
+    apiKey: ${OPENAI_API_KEY}
+    defaultModel: gpt-4o
+  google:
+    apiKey: ${GOOGLE_GENERATIVE_AI_API_KEY}
+    defaultModel: gemini-2.0-flash
+  ollama:
+    baseUrl: http://localhost:11434
+    defaultModel: llama3.2
+
+routing:
+  defaultProvider: openai
+  rules:
+    - intent: SIMPLE
+      provider: google
+      model: gemini-2.0-flash
+      maxTokens: 1024
+      temperature: 0.7
+    - intent: CODE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 4096
+      temperature: 0.2
+    - intent: CREATIVE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 2048
+      temperature: 0.9
+    - intent: ANALYSIS
+      provider: google
+      model: gemini-2.0-pro-exp
+      maxTokens: 4096
+      temperature: 0.4
+    - intent: AGENTIC
+      provider: openai
+      model: gpt-4o
+      maxTokens: 4096
+      temperature: 0.3
+    - intent: VOICE
+      provider: ollama
+      model: llama3.2
+      maxTokens: 512
+      temperature: 0.5
+
+memory:
+  dbPath: ./data/nexus.db
+  maxContextTurns: 20
+
+voice:
+  whisperUrl: http://localhost:3002
+  piperUrl: http://localhost:3003
+  defaultVoice: en_US-lessac-medium
+
+tools:
+  enabled:
+    - web_search
+    - http_fetch
+    - datetime
+    - calculator
+    - run_code
+    - fs_read
+    - fs_write
+  allowedPaths:
+    - ./data
+    - /tmp/nexus
+
+security:
+  rateLimitPerMinute: 30
