@@ -24,5 +24,12 @@ export function runMigrations(db: Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_turns_conversation ON turns(conversation_id);
     CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id, channel);
+
+    CREATE TABLE IF NOT EXISTS rate_limits (
+      user_id TEXT NOT NULL,
+      timestamp INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_rate_limits_user_timestamp ON rate_limits(user_id, timestamp);
   `);
 }

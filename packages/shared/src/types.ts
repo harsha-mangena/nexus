@@ -66,6 +66,13 @@ export interface ModelRoute {
   costTier: 'free' | 'low' | 'medium' | 'high';
 }
 
+// ===== Orchestrator Result =====
+export interface OrchestratorResult {
+  text: string;
+  audio?: Buffer;
+  audioMimeType?: string;
+}
+
 // ===== Configuration =====
 export interface NexusConfig {
   assistant: {
@@ -80,11 +87,13 @@ export interface NexusConfig {
   };
   routing: {
     defaultProvider: 'openai' | 'google' | 'ollama';
+    fallbackPolicy?: 'allow' | 'warn' | 'deny';
     rules: RoutingRule[];
   };
   memory: {
     dbPath: string;
     maxContextTurns: number;
+    retentionDays: number;
   };
   voice?: {
     whisperUrl?: string;

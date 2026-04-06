@@ -1,6 +1,6 @@
 import * as readline from 'node:readline';
 import { randomUUID } from 'node:crypto';
-import type { ChannelConfig, NormalizedMessage, OutgoingMessage } from '@nexus/shared';
+import type { ChannelConfig, ChannelType, NormalizedMessage, OutgoingMessage } from '@nexus/shared';
 import { BaseAdapter } from './base-adapter.js';
 
 export class CLIAdapter extends BaseAdapter {
@@ -8,6 +8,11 @@ export class CLIAdapter extends BaseAdapter {
   private rl?: readline.Interface;
   private conversationId: string = randomUUID();
   private running: boolean = false;
+  private resetHandler?: (userId: string, channel: ChannelType) => Promise<void>;
+
+  onReset(handler: (userId: string, channel: ChannelType) => Promise<void>): void {
+    this.resetHandler = handler;
+  }
 
   async initialize(_config: ChannelConfig): Promise<void> {
     this.logger.info('CLI adapter initialized');
@@ -38,7 +43,11 @@ export class CLIAdapter extends BaseAdapter {
 
       if (input === '/reset') {
         this.conversationId = randomUUID();
-        process.stdout.write(`[Conversation reset. New session: ${this.conversationId}]\n> `);
+        // Emit a reset event so memory can be cleared
+        if (this.resetHandler) {
+          await this.resetHandler('cli-user', 'cli');
+        }
+        process.stdout.write(`[Conversation reset]\n> `);
         return;
       }
 

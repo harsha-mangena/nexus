@@ -1,8 +1,58 @@
 import { fetch } from 'undici';
+import * as dns from 'node:dns';
 import * as cheerio from 'cheerio';
 import type { NexusTool } from '@nexus/shared';
 
 const MAX_CONTENT_LENGTH = 4000;
+
+const BLOCKED_HOSTS = new Set([
+  'metadata.google.internal',
+  'metadata.gcp.internal',
+  'instance-data',
+]);
+
+function isPrivateIP(ip: string): boolean {
+  // IPv4
+  const parts = ip.split('.').map(Number);
+  if (parts.length === 4) {
+    if (parts[0] === 10) return true;                                    // 10.0.0.0/8
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true; // 172.16.0.0/12
+    if (parts[0] === 192 && parts[1] === 168) return true;              // 192.168.0.0/16
+    if (parts[0] === 127) return true;                                    // 127.0.0.0/8
+    if (parts[0] === 169 && parts[1] === 254) return true;              // 169.254.0.0/16 (link-local + metadata)
+    if (parts[0] === 0) return true;                                      // 0.0.0.0/8
+  }
+  // IPv6
+  if (ip === '::1') return true;
+  if (ip.startsWith('fc') || ip.startsWith('fd')) return true;  // fc00::/7
+  if (ip.startsWith('fe80')) return true;                         // fe80::/10
+  return false;
+}
+
+async function validateUrl(url: string): Promise<void> {
+  const parsed = new URL(url);
+
+  // Protocol check
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Blocked protocol: ${parsed.protocol}. Only http and https are allowed.`);
+  }
+
+  // Blocked hostnames
+  if (BLOCKED_HOSTS.has(parsed.hostname)) {
+    throw new Error(`Blocked host: ${parsed.hostname}`);
+  }
+
+  // Resolve DNS and check IP
+  try {
+    const { address } = await dns.promises.lookup(parsed.hostname);
+    if (isPrivateIP(address)) {
+      throw new Error(`Blocked: URL resolves to private/internal IP address`);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('Blocked')) throw err;
+    throw new Error(`DNS resolution failed for ${parsed.hostname}`);
+  }
+}
 
 const httpFetch: NexusTool = {
   name: 'http_fetch',
@@ -28,6 +78,14 @@ const httpFetch: NexusTool = {
       new URL(url); // validate URL format
     } catch {
       return `Error: Invalid URL: ${url}`;
+    }
+
+    // SSRF protection: validate URL before fetching
+    try {
+      await validateUrl(url);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return `Error: ${message}`;
     }
 
     try {

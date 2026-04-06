@@ -1,17 +1,25 @@
 import type { IntentCategory, ModelRoute, NexusConfig } from '@nexus/shared';
+import { createChildLogger } from '@nexus/shared';
 import { DEFAULT_ROUTES } from './routes.js';
+
+const logger = createChildLogger('model-selector');
 
 const PROVIDER_FALLBACK_ORDER: Array<'openai' | 'google' | 'ollama'> = ['openai', 'google', 'ollama'];
 
 export class ModelSelector {
-  private readonly config: NexusConfig;
+  private config: NexusConfig;
 
   constructor(config: NexusConfig) {
     this.config = config;
   }
 
+  updateConfig(config: NexusConfig): void {
+    this.config = config;
+  }
+
   selectModel(intent: IntentCategory): ModelRoute {
     const availableProviders = this.getAvailableProviders();
+    const fallbackPolicy = this.config.routing.fallbackPolicy ?? 'warn';
 
     // First: check config routing rules for this intent
     const configRule = this.config.routing.rules.find((rule) => rule.intent === intent);
@@ -43,23 +51,30 @@ export class ModelSelector {
       }
 
       // Provider from DEFAULT_ROUTES is unavailable; apply fallback logic
-      for (const fallbackProvider of PROVIDER_FALLBACK_ORDER) {
+      this.applyFallbackPolicy(fallbackPolicy, intent, defaultRoute.provider);
+
+      // Use configured defaultProvider first, then fallback order
+      const orderedProviders = [
+        this.config.routing.defaultProvider,
+        ...PROVIDER_FALLBACK_ORDER.filter(p => p !== this.config.routing.defaultProvider),
+      ];
+      for (const fallbackProvider of orderedProviders) {
         if (availableProviders.includes(fallbackProvider)) {
-          // Find another route that uses this fallback provider, or synthesise one
-          const fallbackRoute = DEFAULT_ROUTES.find((r) => r.provider === fallbackProvider);
-          if (fallbackRoute) {
-            return {
-              ...defaultRoute,
-              provider: fallbackProvider,
-              model: this.getDefaultModelForProvider(fallbackProvider),
-            };
-          }
+          return {
+            ...defaultRoute,
+            provider: fallbackProvider,
+            model: this.getDefaultModelForProvider(fallbackProvider),
+          };
         }
       }
     }
 
-    // Last resort: return first available provider with a reasonable default
-    for (const fallbackProvider of PROVIDER_FALLBACK_ORDER) {
+    // Last resort: use configured defaultProvider, then fallback order
+    const orderedProviders = [
+      this.config.routing.defaultProvider,
+      ...PROVIDER_FALLBACK_ORDER.filter(p => p !== this.config.routing.defaultProvider),
+    ];
+    for (const fallbackProvider of orderedProviders) {
       if (availableProviders.includes(fallbackProvider)) {
         return {
           intent,
@@ -75,6 +90,28 @@ export class ModelSelector {
 
     // No providers configured; return SIMPLE default route as a safe fallback
     return DEFAULT_ROUTES.find((r) => r.intent === 'SIMPLE') as ModelRoute;
+  }
+
+  private applyFallbackPolicy(
+    policy: 'allow' | 'warn' | 'deny',
+    intent: IntentCategory,
+    originalProvider: string,
+  ): void {
+    if (policy === 'allow') {
+      return; // Silent fallback
+    }
+    if (policy === 'warn') {
+      logger.warn(
+        { intent, originalProvider },
+        'Provider unavailable, falling back to next available provider',
+      );
+      return;
+    }
+    if (policy === 'deny') {
+      throw new Error(
+        `Provider '${originalProvider}' is unavailable for intent '${intent}' and fallback is denied by policy.`,
+      );
+    }
   }
 
   getAvailableProviders(): string[] {

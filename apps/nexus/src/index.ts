@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import {
   loadConfig,
+  watchConfig,
   stopWatchingConfig,
   logger,
 } from '@nexus/shared';
@@ -45,6 +46,12 @@ async function main(): Promise<void> {
   const store = new SQLiteStore(config.memory.dbPath);
   const memory = new ConversationManager(store, config.memory.maxContextTurns);
 
+  // 3b. Prune old conversations on startup
+  const pruned = store.pruneOldConversations(config.memory.retentionDays);
+  if (pruned > 0) {
+    logger.info({ pruned }, 'Pruned old conversations');
+  }
+
   // 4. Set up router
   const classifier = new IntentClassifier();
   const modelSelector = new ModelSelector(config);
@@ -76,8 +83,8 @@ async function main(): Promise<void> {
   // 8. Create agent orchestrator
   const orchestrator = new AgentOrchestrator(providers, tools, memory, voice);
 
-  // 9. Create gateway and response formatter
-  const gateway = new Gateway(config);
+  // 9. Create gateway (with persistent rate limiting via store) and response formatter
+  const gateway = new Gateway(config, store);
   const formatter = new ResponseFormatter();
 
   // 10. Set up channel adapters
@@ -87,42 +94,50 @@ async function main(): Promise<void> {
   const cliAdapter = new CLIAdapter();
   const cliConfig: ChannelConfig = { enabled: true };
   await cliAdapter.initialize(cliConfig);
+  cliAdapter.onReset(async (userId, channel) => {
+    memory.resetConversation(userId, channel);
+    logger.info({ userId, channel }, 'Conversation reset via CLI');
+  });
   gateway.registerAdapter(cliAdapter);
   enabledChannels.push('cli');
 
   // Add Telegram if configured and enabled
   const telegramConfig = config.channels['telegram'];
   if (telegramConfig?.enabled) {
+    const isRequired = (telegramConfig as Record<string, unknown>)['required'] === true;
     const telegramAdapter = new TelegramAdapter();
     await telegramAdapter.initialize(telegramConfig);
-    gateway.registerAdapter(telegramAdapter);
+    gateway.registerAdapter(telegramAdapter, isRequired);
     enabledChannels.push('telegram');
   }
 
   // Add Discord if configured and enabled
   const discordConfig = config.channels['discord'];
   if (discordConfig?.enabled) {
+    const isRequired = (discordConfig as Record<string, unknown>)['required'] === true;
     const discordAdapter = new DiscordAdapter();
     await discordAdapter.initialize(discordConfig);
-    gateway.registerAdapter(discordAdapter);
+    gateway.registerAdapter(discordAdapter, isRequired);
     enabledChannels.push('discord');
   }
 
   // Add Slack if configured and enabled
   const slackConfig = config.channels['slack'];
   if (slackConfig?.enabled) {
+    const isRequired = (slackConfig as Record<string, unknown>)['required'] === true;
     const slackAdapter = new SlackAdapter();
     await slackAdapter.initialize(slackConfig);
-    gateway.registerAdapter(slackAdapter);
+    gateway.registerAdapter(slackAdapter, isRequired);
     enabledChannels.push('slack');
   }
 
   // Add WhatsApp if configured and enabled
   const whatsappConfig = config.channels['whatsapp'];
   if (whatsappConfig?.enabled) {
+    const isRequired = (whatsappConfig as Record<string, unknown>)['required'] === true;
     const whatsAppAdapter = new WhatsAppAdapter();
     await whatsAppAdapter.initialize(whatsappConfig);
-    gateway.registerAdapter(whatsAppAdapter);
+    gateway.registerAdapter(whatsAppAdapter, isRequired);
     enabledChannels.push('whatsapp');
   }
 
@@ -136,12 +151,26 @@ async function main(): Promise<void> {
     const route = modelSelector.selectModel(classification.intent);
 
     // Process message through orchestrator
-    const responseText = await orchestrator.process(message, route, persona);
+    const result = await orchestrator.process(message, route, persona);
 
     // Format response for the channel
-    const outgoing = formatter.formatForChannel(responseText, message.channel);
+    const outgoing = formatter.formatForChannel(result.text, message.channel);
 
-    return { text: outgoing };
+    // Build attachments if TTS audio is present
+    const attachments: OutgoingMessage['attachments'] = [];
+    if (result.audio) {
+      attachments.push({
+        type: 'audio',
+        buffer: result.audio,
+        mimeType: result.audioMimeType ?? 'audio/wav',
+        fileName: 'response.wav',
+      });
+    }
+
+    return {
+      text: outgoing,
+      attachments: attachments.length > 0 ? attachments : undefined,
+    };
   });
 
   // 12. Start gateway (all adapters)
@@ -175,6 +204,13 @@ async function main(): Promise<void> {
 
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
+
+  // 15. Watch for config changes (hot-reload routing + security)
+  const configPath = process.env['CONFIG_PATH'] ?? './config/nexus.yaml';
+  watchConfig(configPath, (newConfig) => {
+    logger.info('Applying hot-reloaded configuration');
+    modelSelector.updateConfig(newConfig);
+  });
 }
 
 main().catch((err: unknown) => {
