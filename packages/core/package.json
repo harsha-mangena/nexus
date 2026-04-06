@@ -1,0 +1,23 @@
+{
+  "name": "@nexus/core",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "ai": "^4.2.0",
+    "@nexus/shared": "workspace:*",
+    "@nexus/providers": "workspace:*",
+    "@nexus/tools": "workspace:*",
+    "@nexus/memory": "workspace:*",
+    "@nexus/voice": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

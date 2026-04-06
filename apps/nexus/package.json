@@ -1,0 +1,25 @@
+{
+  "name": "@nexus/app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "node --watch dist/index.js",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@nexus/shared": "workspace:*",
+    "@nexus/core": "workspace:*",
+    "@nexus/router": "workspace:*",
+    "@nexus/providers": "workspace:*",
+    "@nexus/channels": "workspace:*",
+    "@nexus/tools": "workspace:*",
+    "@nexus/memory": "workspace:*",
+    "@nexus/voice": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

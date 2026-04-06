@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+data/
+*.db
+*.db-journal
+.DS_Store
+coverage/
+*.log

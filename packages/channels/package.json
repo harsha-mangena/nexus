@@ -1,0 +1,23 @@
+{
+  "name": "@nexus/channels",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@nexus/shared": "workspace:*",
+    "telegraf": "^4.16.0",
+    "discord.js": "^14.16.0",
+    "@slack/bolt": "^4.2.0",
+    "undici": "^7.0.0",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "typescript": "^5.7.0"
+  }
+}

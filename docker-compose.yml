@@ -1,0 +1,46 @@
+services:
+  nexus:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - ./config:/app/config
+      - ./data:/app/data
+    restart: unless-stopped
+
+  waha:
+    image: devlikeapro/waha
+    ports:
+      - "3001:3000"
+    environment:
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      - WAHA_PRINT_QR=true
+    volumes:
+      - waha-sessions:/app/.sessions
+    restart: unless-stopped
+
+  whisper:
+    image: evilfreelancer/whisper-server:latest
+    ports:
+      - "3002:9000"
+    environment:
+      - WHISPER_MODEL=base.en
+    volumes:
+      - whisper-models:/models
+    restart: unless-stopped
+    profiles: ["voice"]
+
+  piper:
+    image: rhasspy/piper:latest
+    ports:
+      - "3003:10200"
+    volumes:
+      - piper-voices:/voices
+    restart: unless-stopped
+    profiles: ["voice"]
+
+volumes:
+  waha-sessions:
+  whisper-models:
+  piper-voices:

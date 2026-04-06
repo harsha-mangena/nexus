@@ -1,0 +1,18 @@
+{
+  "name": "@nexus/voice",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@nexus/shared": "workspace:*",
+    "undici": "^7.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

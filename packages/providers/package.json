@@ -1,0 +1,21 @@
+{
+  "name": "@nexus/providers",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.2.0",
+    "@ai-sdk/google": "^1.2.0",
+    "ollama-ai-provider": "^1.2.0",
+    "@nexus/shared": "workspace:*",
+    "ai": "^4.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
