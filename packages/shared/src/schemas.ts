@@ -49,13 +49,15 @@ export const nexusConfigSchema = z.object({
 
   routing: z.object({
     defaultProvider: providerNameSchema.default('openai'),
+    fallbackPolicy: z.enum(['allow', 'warn', 'deny']).default('warn'),
     rules: z.array(routingRuleSchema).default([]),
-  }).default({ defaultProvider: 'openai', rules: [] }),
+  }).default({ defaultProvider: 'openai', fallbackPolicy: 'warn', rules: [] }),
 
   memory: z.object({
     dbPath: z.string().default('./data/nexus.db'),
     maxContextTurns: z.number().int().positive().default(20),
-  }).default({ dbPath: './data/nexus.db', maxContextTurns: 20 }),
+    retentionDays: z.number().int().positive().default(90),
+  }).default({ dbPath: './data/nexus.db', maxContextTurns: 20, retentionDays: 90 }),
 
   voice: z.object({
     whisperUrl: z.string().url().optional(),
@@ -64,9 +66,9 @@ export const nexusConfigSchema = z.object({
   }).optional(),
 
   tools: z.object({
-    enabled: z.array(z.string()).default(['datetime', 'calculator']),
+    enabled: z.array(z.string()).default(['datetime', 'calculator', 'web_search']),
     allowedPaths: z.array(z.string()).optional(),
-  }).default({ enabled: ['datetime', 'calculator'] }),
+  }).default({ enabled: ['datetime', 'calculator', 'web_search'] }),
 
   security: z.object({
     allowedUserIds: z.record(z.string(), z.array(z.string())).optional(),

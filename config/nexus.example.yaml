@@ -5,13 +5,16 @@ assistant:
 channels:
   telegram:
     enabled: false
+    required: false  # If true, Nexus fails to start when this channel fails
     botToken: ${TELEGRAM_BOT_TOKEN}
   discord:
     enabled: false
+    required: false
     botToken: ${DISCORD_BOT_TOKEN}
     applicationId: ${DISCORD_APPLICATION_ID}
   slack:
     enabled: false
+    required: false
     botToken: ${SLACK_BOT_TOKEN}
     appToken: ${SLACK_APP_TOKEN}
     signingSecret: ${SLACK_SIGNING_SECRET}
@@ -34,6 +37,11 @@ providers:
 
 routing:
   defaultProvider: openai
+  # Fallback policy when configured provider is unavailable:
+  #   allow - silent fallback (current behavior)
+  #   warn  - log warning + fallback (default)
+  #   deny  - fail instead of falling back
+  fallbackPolicy: warn
   rules:
     - intent: SIMPLE
       provider: google
@@ -69,6 +77,7 @@ routing:
 memory:
   dbPath: ./data/nexus.db
   maxContextTurns: 20
+  retentionDays: 90  # Auto-prune conversations older than this
 
 voice:
   whisperUrl: http://localhost:3002
@@ -81,7 +90,8 @@ tools:
     - http_fetch
     - datetime
     - calculator
-    - run_code
+    # run_code: CAUTION - executes code on host. Use only in trusted environments.
+    # - run_code
     - fs_read
     - fs_write
   allowedPaths:
@@ -89,4 +99,9 @@ tools:
     - /tmp/nexus
 
 security:
+  # Per-channel user allowlist. Omit or leave empty to allow all (single-user mode).
+  # Use '*' key for a global allowlist across all channels.
+  # allowedUserIds:
+  #   '*': ['user123']
+  #   telegram: ['user456']
   rateLimitPerMinute: 30

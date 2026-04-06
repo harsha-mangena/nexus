@@ -1,6 +1,6 @@
 import { generateText, tool } from 'ai';
 import { z } from 'zod';
-import type { NormalizedMessage, ModelRoute } from '@nexus/shared';
+import type { NormalizedMessage, ModelRoute, OrchestratorResult } from '@nexus/shared';
 import { createChildLogger } from '@nexus/shared';
 import { ProviderRegistry } from '@nexus/providers';
 import { ToolRegistry } from '@nexus/tools';
@@ -17,7 +17,7 @@ export class AgentOrchestrator {
     private voice: VoicePipeline,
   ) {}
 
-  async process(message: NormalizedMessage, route: ModelRoute, persona: string): Promise<string> {
+  async process(message: NormalizedMessage, route: ModelRoute, persona: string): Promise<OrchestratorResult> {
     // 1. Handle voice: transcribe if voice attachment exists
     let textToProcess = message.text;
     if (message.attachments.some(a => a.type === 'voice') && this.voice.isSTTAvailable()) {
@@ -25,7 +25,7 @@ export class AgentOrchestrator {
       if (voiceAttachment?.buffer) {
         textToProcess = await this.voice.speechToText(voiceAttachment.buffer, voiceAttachment.mimeType);
         if (!textToProcess) {
-          return 'Sorry, I could not transcribe your voice message. Please try again or type your message.';
+          return { text: 'Sorry, I could not transcribe your voice message. Please try again or type your message.' };
         }
       }
     }
@@ -48,7 +48,7 @@ export class AgentOrchestrator {
     // 5. Get the model from provider registry
     const model = this.providers.getModelForRoute(route);
     if (!model) {
-      return 'No AI model is currently available. Please check your provider configuration.';
+      return { text: 'No AI model is currently available. Please check your provider configuration.' };
     }
 
     // 6. Build AI SDK tools map if the route supports tools
@@ -80,11 +80,21 @@ export class AgentOrchestrator {
       // 8. Save assistant response to memory
       this.memory.addAssistantMessage(message.userId, message.channel, responseText);
 
-      return responseText;
+      // 9. If the inbound message was voice AND TTS is available, synthesize audio
+      if (message.attachments.some(a => a.type === 'voice') && this.voice.isTTSAvailable()) {
+        try {
+          const audioBuffer = await this.voice.textToSpeech(responseText);
+          return { text: responseText, audio: audioBuffer, audioMimeType: 'audio/wav' };
+        } catch (err) {
+          logger.warn({ err }, 'TTS synthesis failed, returning text-only response');
+        }
+      }
+
+      return { text: responseText };
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      logger.error({ err, route }, 'LLM generation failed');
-      return `I encountered an error while processing your request: ${errorMessage}`;
+      logger.error({ err, route, userId: message.userId }, 'LLM generation failed');
+      // Never expose internal error details to the user
+      return { text: 'I encountered an issue processing your request. Please try again in a moment.' };
     }
   }
 

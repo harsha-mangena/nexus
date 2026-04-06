@@ -128,4 +128,43 @@ export class SQLiteStore {
       .prepare('DELETE FROM conversations WHERE id = ?')
       .run(conversationId);
   }
+
+  // === Rate limiting (persistent) ===
+
+  recordRateEvent(userId: string): void {
+    this.db.prepare('INSERT INTO rate_limits (user_id, timestamp) VALUES (?, ?)').run(userId, Date.now());
+  }
+
+  isRateLimited(userId: string, maxPerMinute: number): boolean {
+    const windowStart = Date.now() - 60_000;
+    const row = this.db.prepare(
+      'SELECT COUNT(*) as count FROM rate_limits WHERE user_id = ? AND timestamp > ?'
+    ).get(userId, windowStart) as { count: number };
+    return row.count >= maxPerMinute;
+  }
+
+  pruneRateEvents(): void {
+    const cutoff = Date.now() - 120_000; // keep 2 minutes of history
+    this.db.prepare('DELETE FROM rate_limits WHERE timestamp < ?').run(cutoff);
+  }
+
+  // === Conversation retention/pruning ===
+
+  pruneOldConversations(retentionDays: number): number {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - retentionDays);
+    const cutoffStr = cutoff.toISOString();
+
+    // Delete turns for old conversations
+    const oldConvos = this.db.prepare(
+      'SELECT id FROM conversations WHERE updated_at < ?'
+    ).all(cutoffStr) as { id: string }[];
+
+    for (const conv of oldConvos) {
+      this.db.prepare('DELETE FROM turns WHERE conversation_id = ?').run(conv.id);
+    }
+    const result = this.db.prepare('DELETE FROM conversations WHERE updated_at < ?').run(cutoffStr);
+
+    return result.changes;
+  }
 }
