@@ -16,9 +16,11 @@ export class ResponseFormatter {
 
       case 'slack':
         // Slack uses mrkdwn: *bold*, _italic_, `code`, ```code block```
+        // First convert single * italic to _, then convert ** bold to *
+        // Order matters: convert italic first so bold ** doesn't get matched as double-italic
         return text
-          .replace(/\*\*(.+?)\*\*/g, '*$1*')   // Bold: ** → *
-          .replace(/\*(?!\*)(.+?)(?<!\*)\*/g, '_$1_');  // Italic: single * → _
+          .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '_$1_')  // Italic: single * → _ (not touching **)
+          .replace(/\*\*(.+?)\*\*/g, '*$1*');   // Bold: ** → *
 
       case 'whatsapp':
         // WhatsApp supports *bold*, _italic_, ~strikethrough~, ```code```

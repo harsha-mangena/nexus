@@ -102,9 +102,9 @@ export class SQLiteStore {
     const rows = this.db
       .prepare(
         `SELECT * FROM (
-           SELECT * FROM turns WHERE conversation_id = ?
-           ORDER BY timestamp DESC LIMIT ?
-         ) ORDER BY timestamp ASC`
+           SELECT *, _rowid_ AS _rid FROM turns WHERE conversation_id = ?
+           ORDER BY timestamp DESC, _rid DESC LIMIT ?
+         ) ORDER BY timestamp ASC, _rid ASC`
       )
       .all(conversationId, limit) as TurnRow[];
 

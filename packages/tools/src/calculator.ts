@@ -1,15 +1,23 @@
 import type { NexusTool } from '@nexus/shared';
 
-// Allow: digits, operators, parentheses, dots, spaces, and Math.* identifiers
-const SAFE_EXPRESSION_RE = /^[0-9+\-*/%.() e\t\nMathsqrtabsceilflooroundPIlogpowminmax,]*$/;
+// Allowed tokens: numbers, operators, parens, dots, commas, spaces, and specific Math.* identifiers
+const ALLOWED_TOKENS_RE = /^(\s|\d+\.?\d*|[+\-*/%(),.]|\*\*|Math\.(sqrt|abs|ceil|floor|round|log|pow|min|max|PI|E|sin|cos|tan|atan2))*$/;
+
+// Blocklist: known dangerous identifiers that must never appear
+const DANGEROUS_RE = /\b(process|require|import|eval|Function|global|globalThis|this|window|document|setTimeout|setInterval|fetch|XMLHttpRequest|Proxy|Reflect|constructor|__proto__|prototype)\b/;
 
 function safeEval(expression: string): number {
-  // Strip all whitespace for the safety check but evaluate the original
-  if (!SAFE_EXPRESSION_RE.test(expression)) {
+  // Safety: reject dangerous identifiers first
+  if (DANGEROUS_RE.test(expression)) {
+    throw new Error('Expression contains disallowed identifiers. Only numbers, basic operators (+, -, *, /, %, **), parentheses, and Math functions are allowed.');
+  }
+
+  // Safety: only allow known-safe tokens
+  if (!ALLOWED_TOKENS_RE.test(expression)) {
     throw new Error('Expression contains disallowed characters. Only numbers, basic operators (+, -, *, /, %, **), parentheses, and Math functions are allowed.');
   }
 
-  // Create a restricted scope — only expose Math
+  // Create a restricted scope — only expose Math, with null prototype to prevent prototype access
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
   const fn = new Function('Math', `"use strict"; return (${expression});`);
   const result: unknown = fn(Math);
