@@ -42,10 +42,10 @@ export class SQLiteStore {
 
   getOrCreateConversation(userId: string, channel: ChannelType): string {
     const existing = this.db
-      .prepare<[string, string], ConversationRow>(
+      .prepare(
         'SELECT * FROM conversations WHERE user_id = ? AND channel = ? ORDER BY updated_at DESC LIMIT 1'
       )
-      .get(userId, channel);
+      .get(userId, channel) as ConversationRow | undefined;
 
     if (existing) {
       return existing.id;
@@ -100,13 +100,13 @@ export class SQLiteStore {
 
   getTurns(conversationId: string, limit: number): ConversationTurn[] {
     const rows = this.db
-      .prepare<[string, number], TurnRow>(
+      .prepare(
         `SELECT * FROM (
            SELECT * FROM turns WHERE conversation_id = ?
            ORDER BY timestamp DESC LIMIT ?
          ) ORDER BY timestamp ASC`
       )
-      .all(conversationId, limit);
+      .all(conversationId, limit) as TurnRow[];
 
     return rows.map((row) => ({
       id: row.id,

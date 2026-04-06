@@ -9,13 +9,10 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
+    "@nexus/shared": "workspace:*",
     "undici": "^7.0.0"
   },
   "devDependencies": {
-    "@nexus/shared": "workspace:*",
     "typescript": "^5.7.0"
-  },
-  "peerDependencies": {
-    "@nexus/shared": "workspace:*"
   }
 }

@@ -8,6 +8,7 @@ import { BaseAdapter } from './base-adapter.js';
 interface WhatsAppConfig extends ChannelConfig {
   wahaUrl: string;
   webhookUrl?: string;
+  webhookPort?: number;
   session?: string;
 }
 
@@ -31,7 +32,7 @@ export class WhatsAppAdapter extends BaseAdapter {
   private session: string = 'default';
   private webhookUrl?: string;
   private server?: Server;
-  private readonly webhookPort: number = 3000;
+  private webhookPort: number = 3100;
   private readonly webhookPath: string = '/webhook/whatsapp';
 
   async initialize(config: ChannelConfig): Promise<void> {
@@ -39,6 +40,7 @@ export class WhatsAppAdapter extends BaseAdapter {
     this.wahaUrl = waConfig.wahaUrl.replace(/\/$/, '');
     this.session = waConfig.session ?? 'default';
     this.webhookUrl = waConfig.webhookUrl;
+    this.webhookPort = waConfig.webhookPort ?? 3100;
     this.logger.info('WhatsApp adapter initialized');
   }
 

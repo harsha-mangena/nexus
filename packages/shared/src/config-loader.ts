@@ -21,7 +21,9 @@ export function loadConfig(configPath?: string): NexusConfig {
   try {
     const raw = fs.readFileSync(absolutePath, 'utf-8');
     const parsed = yaml.load(raw) as Record<string, unknown>;
-    const merged = mergeWithEnv(parsed);
+    const resolved = resolveEnvVars(parsed) as Record<string, unknown>;
+    stripEmptyProviders(resolved);
+    const merged = mergeWithEnv(resolved);
     const validated = nexusConfigSchema.parse(merged) as unknown as NexusConfig;
     currentConfig = validated;
     logger.info(`Configuration loaded from ${absolutePath}`);
@@ -146,6 +148,33 @@ function buildConfigFromEnv(): NexusConfig {
   const validated = nexusConfigSchema.parse(raw) as unknown as NexusConfig;
   currentConfig = validated;
   return validated;
+}
+
+function resolveEnvVars(obj: unknown): unknown {
+  if (typeof obj === 'string') {
+    return obj.replace(/\$\{([^}]+)\}/g, (_, varName) => process.env[varName] ?? '');
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(resolveEnvVars);
+  }
+  if (obj && typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      result[key] = resolveEnvVars(value);
+    }
+    return result;
+  }
+  return obj;
+}
+
+function stripEmptyProviders(config: Record<string, unknown>): void {
+  const providers = config['providers'] as Record<string, Record<string, unknown>> | undefined;
+  if (!providers) return;
+  for (const [key, value] of Object.entries(providers)) {
+    if (value && typeof value === 'object' && 'apiKey' in value && value['apiKey'] === '') {
+      delete providers[key];
+    }
+  }
 }
 
 function mergeWithEnv(parsed: Record<string, unknown>): Record<string, unknown> {

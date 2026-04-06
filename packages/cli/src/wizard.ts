@@ -283,6 +283,7 @@ function buildYamlConfig(
 
   const providersConfig: NexusYamlConfig['providers'] = {};
   for (const prov of providers) {
+    const configKey = prov === 'gemini' ? 'google' : prov;
     const entry: { enabled: boolean; [key: string]: unknown } = { enabled: true };
     if (prov === 'openai') {
       entry['apiKey'] = '${OPENAI_API_KEY}';
@@ -292,7 +293,7 @@ function buildYamlConfig(
       const ol = providerCreds.get('ollama') as OllamaCredentials | undefined;
       entry['baseUrl'] = ol?.OLLAMA_BASE_URL ?? 'http://localhost:11434';
     }
-    providersConfig[prov] = entry;
+    providersConfig[configKey] = entry;
   }
 
   const voiceConfig: NexusYamlConfig['voice'] = { enabled: voiceEnabled };

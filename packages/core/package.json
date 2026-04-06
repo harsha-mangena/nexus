@@ -1,5 +1,5 @@
 {
-  "name": "@nexus/providers",
+  "name": "@nexus/core",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
@@ -9,11 +9,13 @@
     "clean": "rm -rf dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^1.2.0",
-    "@ai-sdk/google": "^1.2.0",
-    "ollama-ai-provider": "^1.2.0",
+    "ai": "^4.2.0",
     "@nexus/shared": "workspace:*",
-    "ai": "^4.2.0"
+    "@nexus/providers": "workspace:*",
+    "@nexus/tools": "workspace:*",
+    "@nexus/memory": "workspace:*",
+    "@nexus/voice": "workspace:*",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
