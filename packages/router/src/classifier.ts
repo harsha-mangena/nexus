@@ -50,9 +50,9 @@ export class IntentClassifier {
 
       for (const keyword of keywords) {
         if (keyword.includes(' ')) {
-          // Multi-word keyword: match as phrase
+          // Multi-word keyword: match as phrase — worth 2 points (more specific)
           if (lower.includes(keyword)) {
-            matches++;
+            matches += 2;
           }
         } else {
           // Single-word keyword: match whole words
