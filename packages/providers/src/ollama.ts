@@ -5,8 +5,11 @@ export function createOllamaProvider(config: NexusConfig) {
   const ollamaConfig = config.providers.ollama;
   if (!ollamaConfig) return null;
 
+  // The ollama-ai-provider SDK expects baseURL to end with /api
+  // User config stores the base URL (e.g. http://localhost:11434)
+  const baseUrl = ollamaConfig.baseUrl.replace(/\/+$/, '');
   const provider = createOllama({
-    baseURL: ollamaConfig.baseUrl + '/api',
+    baseURL: baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`,
   });
 
   return {

@@ -165,18 +165,21 @@ function routingStrategyDefaultProvider(
   strategy: RoutingStrategy,
   availableProviders: ProviderKey[]
 ): string {
+  // Map wizard provider keys to config provider keys (gemini → google)
+  const toConfigKey = (key: ProviderKey): string => key === 'gemini' ? 'google' : key;
+
   switch (strategy) {
     case 'cost-optimized':
-      if (availableProviders.includes('gemini')) return 'gemini';
-      if (availableProviders.includes('ollama')) return 'ollama';
-      return availableProviders[0] ?? 'openai';
+      if (availableProviders.includes('gemini')) return toConfigKey('gemini');
+      if (availableProviders.includes('ollama')) return toConfigKey('ollama');
+      return toConfigKey(availableProviders[0] ?? 'openai' as ProviderKey);
     case 'quality-optimized':
-      if (availableProviders.includes('openai')) return 'openai';
-      if (availableProviders.includes('gemini')) return 'gemini';
-      return availableProviders[0] ?? 'openai';
+      if (availableProviders.includes('openai')) return toConfigKey('openai');
+      if (availableProviders.includes('gemini')) return toConfigKey('gemini');
+      return toConfigKey(availableProviders[0] ?? 'openai' as ProviderKey);
     case 'local-only':
-      if (availableProviders.includes('ollama')) return 'ollama';
-      return availableProviders[0] ?? 'ollama';
+      if (availableProviders.includes('ollama')) return toConfigKey('ollama');
+      return toConfigKey(availableProviders[0] ?? 'ollama' as ProviderKey);
   }
 }
 
@@ -401,13 +404,13 @@ export async function runWizard(): Promise<void> {
   if (voiceEnabled) {
     whisperUrl = await askText({
       message: 'Whisper STT service URL:',
-      placeholder: 'http://localhost:9000',
-      defaultValue: 'http://localhost:9000',
+      placeholder: 'http://localhost:3002',
+      defaultValue: 'http://localhost:3002',
     });
     piperUrl = await askText({
       message: 'Piper TTS service URL:',
-      placeholder: 'http://localhost:5000',
-      defaultValue: 'http://localhost:5000',
+      placeholder: 'http://localhost:3003',
+      defaultValue: 'http://localhost:3003',
     });
   }
 

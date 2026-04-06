@@ -1,6 +1,7 @@
 import {
   Client,
   GatewayIntentBits,
+  Partials,
   Events,
   type Message,
   ChannelType as DiscordChannelType,
@@ -27,6 +28,7 @@ export class DiscordAdapter extends BaseAdapter {
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
       ],
+      partials: [Partials.Channel],
     });
 
     this.client.on(Events.MessageCreate, async (message: Message) => {

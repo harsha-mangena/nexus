@@ -7,8 +7,6 @@ services:
     volumes:
       - ./config:/app/config
       - ./data:/app/data
-    depends_on:
-      - waha
     restart: unless-stopped
 
   waha:
@@ -25,7 +23,7 @@ services:
   whisper:
     image: evilfreelancer/whisper-server:latest
     ports:
-      - "3002:8080"
+      - "3002:9000"
     environment:
       - WHISPER_MODEL=base.en
     volumes:

@@ -18,13 +18,18 @@ export class ModelSelector {
     if (configRule) {
       const provider = configRule.provider;
       if (availableProviders.includes(provider)) {
+        // Look up supportsTools from the matching DEFAULT_ROUTES entry, or default based on intent
+        const defaultRoute = DEFAULT_ROUTES.find((r) => r.intent === intent);
+        const toolIntents: IntentCategory[] = ['CODE', 'AGENTIC', 'ANALYSIS'];
+        const supportsTools = defaultRoute?.supportsTools ?? toolIntents.includes(intent);
+
         return {
           intent,
           provider,
           model: configRule.model,
           maxTokens: configRule.maxTokens ?? 2048,
           temperature: configRule.temperature ?? 0.7,
-          supportsTools: false,
+          supportsTools,
           costTier: 'medium',
         };
       }

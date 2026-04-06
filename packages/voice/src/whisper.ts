@@ -18,7 +18,7 @@ export class WhisperClient {
       const filename = `audio.${ext}`;
 
       const preamble = Buffer.from(
-        `--${boundary}\r\nContent-Disposition: form-data; name="audio_file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`,
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mimeType}\r\n\r\n`,
         'utf8',
       );
       const epilogue = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8');

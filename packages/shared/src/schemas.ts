@@ -7,17 +7,17 @@ const channelConfigSchema = z.object({
 const openaiProviderSchema = z.object({
   apiKey: z.string().min(1, 'OpenAI API key is required'),
   defaultModel: z.string().optional(),
-});
+}).passthrough();
 
 const googleProviderSchema = z.object({
   apiKey: z.string().min(1, 'Google API key is required'),
   defaultModel: z.string().optional(),
-});
+}).passthrough();
 
 const ollamaProviderSchema = z.object({
   baseUrl: z.string().url('Ollama base URL must be a valid URL'),
   defaultModel: z.string().optional(),
-});
+}).passthrough();
 
 const intentSchema = z.enum(['SIMPLE', 'CODE', 'CREATIVE', 'ANALYSIS', 'AGENTIC', 'VOICE']);
 const providerNameSchema = z.enum(['openai', 'google', 'ollama']);
