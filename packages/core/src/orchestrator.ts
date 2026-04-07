@@ -73,6 +73,11 @@ export class AgentOrchestrator {
         maxSteps: route.supportsTools ? (route.intent === 'AGENTIC' ? 8 : 3) : 1,
         maxTokens: route.maxTokens,
         temperature: route.temperature,
+        onStepFinish({ toolCalls, toolResults }) {
+          if (toolCalls && toolCalls.length > 0) {
+            logger.info({ tools: toolCalls.map((tc: { toolName: string }) => tc.toolName) }, 'Tool call executed');
+          }
+        },
       });
 
       const responseText = result.text || 'I processed your request but have no text response.';

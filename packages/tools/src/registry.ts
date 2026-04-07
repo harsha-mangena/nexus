@@ -5,6 +5,8 @@ import { createFsTools } from './fs-tools.js';
 import runCode from './run-code.js';
 import datetime from './datetime.js';
 import calculator from './calculator.js';
+import slack from './slack.js';
+import github from './github.js';
 
 export class ToolRegistry {
   private readonly tools = new Map<string, NexusTool>();
@@ -39,6 +41,8 @@ export class ToolRegistry {
     registry.register(runCode);
     registry.register(datetime);
     registry.register(calculator);
+    registry.register(slack);
+    registry.register(github);
 
     // Register filesystem tools (require allowedPaths)
     if (allowedPaths.length > 0) {

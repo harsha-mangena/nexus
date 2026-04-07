@@ -80,6 +80,12 @@ async function main(): Promise<void> {
 
   const voice = new VoicePipeline(whisper, piper);
 
+  // 7b. Build dynamic system prompt with available tool names
+  const toolList = tools.getEnabled().map(t => `- ${t.name}: ${t.description}`).join('\n');
+  if (toolList) {
+    persona += `\n\nYou have access to the following tools and MUST use them when appropriate:\n${toolList}\n\nIMPORTANT RULES:\n- When the user asks about current events, news, weather, or real-time information, you MUST use the web_search tool.\n- When the user asks about their GitHub repos, issues, or PRs, use the github tool.\n- When the user asks about Slack messages or channels, use the slack tool.\n- Do NOT say you cannot access real-time information — you CAN via your tools.\n- Always try to use tools before saying you don't have access to something.`;
+  }
+
   // 8. Create agent orchestrator
   const orchestrator = new AgentOrchestrator(providers, tools, memory, voice);
 
@@ -94,6 +100,8 @@ async function main(): Promise<void> {
   const cliAdapter = new CLIAdapter();
   const cliConfig: ChannelConfig = { enabled: true };
   await cliAdapter.initialize(cliConfig);
+  cliAdapter.setAssistantName(config.assistant.name);
+  cliAdapter.setToolNames(tools.getEnabled().map(t => t.name));
   cliAdapter.onReset(async (userId, channel) => {
     memory.resetConversation(userId, channel);
     logger.info({ userId, channel }, 'Conversation reset via CLI');

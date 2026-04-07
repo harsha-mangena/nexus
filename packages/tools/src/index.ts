@@ -5,3 +5,5 @@ export { default as httpFetch } from './http-fetch.js';
 export { default as runCode } from './run-code.js';
 export { default as datetime } from './datetime.js';
 export { default as calculator } from './calculator.js';
+export { default as slack } from './slack.js';
+export { default as github } from './github.js';
