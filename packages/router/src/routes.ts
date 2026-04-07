@@ -7,7 +7,7 @@ export const DEFAULT_ROUTES: ModelRoute[] = [
     model: 'gemini-2.0-flash',
     maxTokens: 1024,
     temperature: 0.7,
-    supportsTools: false,
+    supportsTools: true,   // Must be true — the model needs tools for real-time info, web search, etc.
     costTier: 'low',
   },
   {
@@ -25,7 +25,7 @@ export const DEFAULT_ROUTES: ModelRoute[] = [
     model: 'gpt-4o',
     maxTokens: 2048,
     temperature: 0.9,
-    supportsTools: false,
+    supportsTools: true,   // Creative tasks may still need web search for research
     costTier: 'high',
   },
   {
@@ -52,7 +52,7 @@ export const DEFAULT_ROUTES: ModelRoute[] = [
     model: 'llama3.2',
     maxTokens: 512,
     temperature: 0.5,
-    supportsTools: false,
+    supportsTools: true,   // Voice queries may need search/tools
     costTier: 'free',
   },
 ];
