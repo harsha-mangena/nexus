@@ -66,7 +66,7 @@ export const nexusConfigSchema = z.object({
   }).optional(),
 
   tools: z.object({
-    enabled: z.array(z.string()).default(['datetime', 'calculator', 'web_search']),
+    enabled: z.array(z.string()).default(['datetime', 'calculator', 'web_search', 'slack', 'github']),
     allowedPaths: z.array(z.string()).optional(),
   }).default({ enabled: ['datetime', 'calculator', 'web_search'] }),
 

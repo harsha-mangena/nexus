@@ -70,9 +70,14 @@ export class AgentOrchestrator {
         system: persona,
         messages,
         tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
-        maxSteps: route.supportsTools ? (route.intent === 'AGENTIC' ? 8 : 3) : 1,
+        maxSteps: route.supportsTools ? (route.intent === 'AGENTIC' ? 10 : 5) : 1,
         maxTokens: route.maxTokens,
         temperature: route.temperature,
+        onStepFinish({ toolCalls, toolResults }) {
+          if (toolCalls && toolCalls.length > 0) {
+            logger.info({ tools: toolCalls.map((tc: { toolName: string }) => tc.toolName) }, 'Tool call executed');
+          }
+        },
       });
 
       const responseText = result.text || 'I processed your request but have no text response.';

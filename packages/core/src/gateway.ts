@@ -25,7 +25,9 @@ export class Gateway {
     this.store = store;
     // Prune old rate events every 60s
     if (store) {
-      this.pruneInterval = setInterval(() => store.pruneRateEvents(), 60_000);
+      this.pruneInterval = setInterval(() => {
+        try { store.pruneRateEvents(); } catch { /* store may be closed */ }
+      }, 60_000);
     }
   }
 
