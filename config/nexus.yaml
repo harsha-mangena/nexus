@@ -1,0 +1,64 @@
+assistant:
+  name: Nexus
+  personaFile: ./config/persona.md
+
+channels:
+  cli:
+    enabled: true
+
+providers:
+  openai:
+    apiKey: ${OPENAI_API_KEY}
+    defaultModel: gpt-4o
+
+routing:
+  defaultProvider: openai
+  fallbackPolicy: deny
+  rules:
+    - intent: SIMPLE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 1024
+      temperature: 0.7
+    - intent: CODE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 4096
+      temperature: 0.2
+    - intent: CREATIVE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 2048
+      temperature: 0.9
+    - intent: ANALYSIS
+      provider: openai
+      model: gpt-4o
+      maxTokens: 4096
+      temperature: 0.4
+    - intent: AGENTIC
+      provider: openai
+      model: gpt-4o
+      maxTokens: 4096
+      temperature: 0.3
+    - intent: VOICE
+      provider: openai
+      model: gpt-4o
+      maxTokens: 1024
+      temperature: 0.5
+
+memory:
+  dbPath: ./data/nexus.db
+  maxContextTurns: 20
+  retentionDays: 90
+
+tools:
+  enabled:
+    - web_search
+    - http_fetch
+    - datetime
+    - calculator
+  allowedPaths:
+    - ./data
+
+security:
+  rateLimitPerMinute: 30
